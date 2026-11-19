@@ -1,7 +1,1 @@
-# Versionsnummern aus der Git-Historie (GitVersion 7), Verzweigungsmodell GitFlow, z. B.:
-#   master            -> 0.1.0           (Release, Tag v0.1.0 setzt die Version fest)
-#   develop           -> 0.2.0-alpha.3
-#   feature/create-api -> 0.2.0-create-api.1
-# Details: https://gitversion.net/docs/reference/configuration
 workflow: GitFlow/v1
-next-version: 0.1.0
