@@ -21,6 +21,8 @@ RUN dotnet build "./CatalogService.csproj" -c $BUILD_CONFIGURATION -o /app/build
 # Diese Stufe wird verwendet, um das Dienstprojekt zu veröffentlichen, das in die letzte Phase kopiert werden soll.
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
+# Versionsnummer aus der CI (GitVersion); lokal ohne Angabe 0.0.0-local
+ARG VERSION=0.0.0-local
 RUN dotnet publish "./CatalogService.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # Diese Stufe wird in der Produktion oder bei Ausführung von VS im regulären Modus verwendet (Standard, wenn die Debugkonfiguration nicht verwendet wird).

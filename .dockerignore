@@ -1,7 +1,8 @@
+# .git bleibt im Build-Kontext: GitVersion.MsBuild berechnet die Version beim
+# dotnet build im Dockerfile aus der Git-Historie.
 **/.classpath
 **/.dockerignore
 **/.env
-**/.git
 **/.gitignore
 **/.project
 **/.settings
@@ -24,7 +25,3 @@
 LICENSE
 README.md
 !**/.gitignore
-!.git/HEAD
-!.git/config
-!.git/packed-refs
-!.git/refs/heads/**
