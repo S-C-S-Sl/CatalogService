@@ -1,1 +1,5 @@
 workflow: GitFlow/v1
+calculation:
+  branches:
+    feature:
+      mode: ContinuousDelivery

@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/Projektmappenelemente/">
     <File Path=".github/workflows/build.yml" />
+    <File Path="GitVersion.yml" />
   </Folder>
   <Project Path="CatalogService.Interactors/CatalogService.Interactors.csproj" Id="172d5010-67fe-4fda-8e24-17d5b11c8e08" />
   <Project Path="CatalogService.Logic/CatalogService.Logic.csproj" Id="a9b75543-a965-45d8-af93-330d7ca6d470" />
