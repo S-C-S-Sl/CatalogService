@@ -1,6 +1,34 @@
-@CatalogService_HostAddress = http://localhost:5091
+# Testanfragen (Visual Studio, VS Code REST Client, JetBrains)
+# Lokal direkt am Dienst (ohne Präfix):
+@base = http://localhost:5091
+# Im Cluster über nginx:  @base = http://shop.k8s-lab/api/catalog
 
-GET {{CatalogService_HostAddress}}/weatherforecast/
-Accept: application/json
+GET {{base}}/v1/products
 
 ###
+POST {{base}}/v1/products
+Content-Type: application/json
+
+{ "name": "Kaffeebecher", "description": "0,3 l, Steingut", "price": 12.90 }
+
+###
+# Id aus der Antwort (Location-Header) einsetzen
+GET {{base}}/v1/products/00000000-0000-0000-0000-000000000000
+
+###
+PUT {{base}}/v1/products/00000000-0000-0000-0000-000000000000
+Content-Type: application/json
+
+{ "name": "Kaffeebecher", "description": "0,4 l, Steingut", "price": 13.90 }
+
+###
+DELETE {{base}}/v1/products/00000000-0000-0000-0000-000000000000
+
+###
+GET {{base}}/openapi/v1.json
+
+###
+GET {{base}}/health/live
+
+###
+GET {{base}}/health/ready
