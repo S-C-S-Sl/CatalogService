@@ -14,7 +14,6 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY . .
 RUN dotnet restore "./CatalogService/CatalogService.csproj"
-COPY . .
 WORKDIR "/src/CatalogService"
 RUN dotnet build "./CatalogService.csproj" -c $BUILD_CONFIGURATION -o /app/build
 

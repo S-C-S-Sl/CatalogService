@@ -1,5 +1,6 @@
 
 using Asp.Versioning;
+using CatalogService.Interactors;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 
@@ -14,7 +15,6 @@ namespace CatalogService
             // Add services to the container.
 
             builder.Services.AddControllers();
-            builder.Services.AddOpenApi();
             builder.Services.AddHealthChecks();
             builder.Services.AddApiVersioning(options =>
                 {
@@ -38,6 +38,8 @@ namespace CatalogService
                     options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(network));
                 }
             });
+
+            builder.Services.AddSingleton<IProductInteractor, InMemoryProductInteractor>();
 
             var app = builder.Build();
 
