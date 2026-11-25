@@ -8,5 +8,6 @@
   <Project Path="CatalogService.Resources.MongoDb/CatalogService.Resources.MongoDb.csproj" Id="d119fc2b-3cf9-4af6-ba18-25f3e33e5f5f" />
   <Project Path="CatalogService.Resources.RabbitMq/CatalogService.Resources.RabbitMq.csproj" Id="27bcbd1e-269c-4250-b20e-f255527bf9e0" />
   <Project Path="CatalogService.Resources/CatalogService.Resources.csproj" Id="b0dee1a5-7e74-43d9-8e58-d06e620d040b" />
+  <Project Path="CatalogService.Tests/CatalogService.Tests.csproj" />
   <Project Path="CatalogService/CatalogService.csproj" />
 </Solution>

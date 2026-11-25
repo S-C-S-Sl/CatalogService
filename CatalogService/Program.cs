@@ -1,6 +1,8 @@
 
 using Asp.Versioning;
 using CatalogService.Interactors;
+using CatalogService.Resources.MongoDb;
+using Mappify;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 
@@ -39,7 +41,10 @@ namespace CatalogService
                 }
             });
 
-            builder.Services.AddSingleton<IProductInteractor, InMemoryProductInteractor>();
+            builder.Services.AddMappify();
+            builder.Services.AddMappifyProfile<ProductMappingProfile>();
+            builder.Services.AddMongoDbResources(builder.Configuration);
+            builder.Services.AddSingleton<IProductInteractor, ProductInteractor>();
 
             var app = builder.Build();
 
