@@ -71,8 +71,8 @@ Die Container-Tests starten ihre MongoDB selbst und brauchen dafür eine laufend
 
 | Workflow | Aufgabe | Läuft bei |
 |---|---|---|
-| `ci.yml` | bauen und testen, veröffentlicht nichts | Pull Request, Push auf andere Branches (z. B. `bugfix/**`) |
-| `publish.yml` | ruft zuerst `ci.yml` auf, bei Erfolg Version bestimmen (GitVersion), Image bauen und nach `ghcr.io/s-c-s-sl/catalogservice` veröffentlichen | Push auf `master`, `develop`, `feature/**` und Tags `v*` |
+| `ci.yml` | bauen und testen, veröffentlicht nichts | Pull Request und Push auf Arbeits-Branches (`feature/**`, `bugfix/**`) |
+| `publish.yml` | ruft zuerst `ci.yml` auf, bei Erfolg Version bestimmen (GitVersion), Image bauen und nach `ghcr.io/s-c-s-sl/catalogservice` veröffentlichen | nur beim Merge eines Pull Requests nach `master` oder `develop` (Push auf diesen Branch) und bei Tags `v*` |
 
 ## Bekannte offene Punkte
 

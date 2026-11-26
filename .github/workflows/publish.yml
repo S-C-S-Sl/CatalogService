@@ -6,14 +6,16 @@
 #   Version: GitVersion aus der Git-Historie (GitVersion.yml, GitFlow).
 #            In der DLL setzt sie das NuGet-Paket GitVersion.MsBuild beim Build (auch im Dockerfile),
 #            für die Image-Tags berechnet sie der Job "version" mit derselben Konfiguration.
-#   Push auf master/develop/feature/**  -> Image mit Versions-, Branch- und Commit-Tag nach ghcr.io
+#   Läuft nur, wenn ein Pull Request nach master oder develop gemergt wird (ein Merge ist ein Push auf
+#   diesen Branch), nicht bei jedem Feature-Branch. Feature-Branches durchlaufen nur ci.yml.
+#   Push auf master/develop             -> Image mit Versions-, Branch- und Commit-Tag nach ghcr.io
 #                                          (alle Tags aus GitVersion)
 #   Tag v1.2.3 auf master               -> Image 1.2.3
 name: publish
 
 on:
   push:
-    branches: [master, develop, "feature/**"]
+    branches: [master, develop]
     tags: ["v*"]
   workflow_dispatch:
 
