@@ -25,6 +25,7 @@
     <ProjectReference Include="..\CatalogService.Interactors\CatalogService.Interactors.csproj" />
     <ProjectReference Include="..\CatalogService.Logic\CatalogService.Logic.csproj" />
     <ProjectReference Include="..\CatalogService.Resources\CatalogService.Resources.csproj" />
+    <ProjectReference Include="..\CatalogService\CatalogService.csproj" />
   </ItemGroup>
 
 </Project>

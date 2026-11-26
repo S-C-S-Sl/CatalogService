@@ -12,11 +12,13 @@ public sealed class ProductInteractorTests
     private static readonly Guid ProductId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
     private readonly IProductRepository productRepository = Substitute.For<IProductRepository>();
+    private readonly IProductIdGenerator productIdGenerator = Substitute.For<IProductIdGenerator>();
     private readonly ProductInteractor productInteractor;
 
     public ProductInteractorTests()
     {
         var services = new ServiceCollection();
+        services.AddSingleton(productIdGenerator);
         services.AddMappify();
         services.AddMappifyProfile<ProductMappingProfile>();
         var mappify = services.BuildServiceProvider().GetRequiredService<IMappify>();
@@ -25,15 +27,15 @@ public sealed class ProductInteractorTests
     }
 
     [Fact]
-    public async Task CreateAsync_StoresProductWithNewId()
+    public async Task CreateAsync_StoresProductWithGeneratedId()
     {
+        productIdGenerator.Generate().Returns(ProductId);
         var request = new CreateProductRequest("Kaffee", "Gemahlen", 4.99m);
 
-        var created = await productInteractor.CreateAsync(request);
+        await productInteractor.CreateAsync(request);
 
-        Assert.NotEqual(Guid.Empty, created.Id);
         await productRepository.Received(1).AddAsync(
-            Arg.Is<Product>(product => product.Id == created.Id
+            Arg.Is<Product>(product => product.Id == ProductId
                                        && product.Name == "Kaffee"
                                        && product.Description == "Gemahlen"
                                        && product.Price == 4.99m),
@@ -43,13 +45,12 @@ public sealed class ProductInteractorTests
     [Fact]
     public async Task CreateAsync_ReturnsTheSavedValues()
     {
+        productIdGenerator.Generate().Returns(ProductId);
         var request = new CreateProductRequest("Kaffee", "Gemahlen", 4.99m);
 
         var created = await productInteractor.CreateAsync(request);
 
-        Assert.Equal("Kaffee", created.Name);
-        Assert.Equal("Gemahlen", created.Description);
-        Assert.Equal(4.99m, created.Price);
+        Assert.Equal(new ProductDto(ProductId, "Kaffee", "Gemahlen", 4.99m), created);
     }
 
     [Fact]
@@ -92,10 +93,8 @@ public sealed class ProductInteractorTests
     }
 
     [Fact]
-    public async Task UpdateAsync_ReplacesTheStoredProduct()
+    public async Task UpdateAsync_ReplacesTheStoredProductAndKeepsItsId()
     {
-        productRepository.GetAsync(ProductId, Arg.Any<CancellationToken>())
-            .Returns(new Product(ProductId, "Kaffee", "Gemahlen", 4.99m));
         productRepository.ReplaceAsync(Arg.Any<Product>(), Arg.Any<CancellationToken>()).Returns(true);
 
         var updated = await productInteractor.UpdateAsync(ProductId, new UpdateProductRequest("Tee", null, 3.50m));
@@ -107,14 +106,13 @@ public sealed class ProductInteractorTests
     }
 
     [Fact]
-    public async Task UpdateAsync_ReturnsNullAndStoresNothingWhenProductDoesNotExist()
+    public async Task UpdateAsync_ReturnsNullWhenProductDoesNotExist()
     {
-        productRepository.GetAsync(ProductId, Arg.Any<CancellationToken>()).Returns((Product?)null);
+        productRepository.ReplaceAsync(Arg.Any<Product>(), Arg.Any<CancellationToken>()).Returns(false);
 
         var updated = await productInteractor.UpdateAsync(ProductId, new UpdateProductRequest("Tee", null, 3.50m));
 
         Assert.Null(updated);
-        await productRepository.DidNotReceive().ReplaceAsync(Arg.Any<Product>(), Arg.Any<CancellationToken>());
     }
 
     [Theory]

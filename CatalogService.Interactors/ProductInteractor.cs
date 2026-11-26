@@ -30,13 +30,7 @@ public sealed class ProductInteractor(IProductRepository productRepository, IMap
 
     public async Task<ProductDto?> UpdateAsync(Guid id, UpdateProductRequest request, CancellationToken cancellationToken = default)
     {
-        var product = await productRepository.GetAsync(id, cancellationToken);
-        if (product is null)
-        {
-            return null;
-        }
-
-        product.ChangeDetails(request.Name, request.Description, request.Price);
+        var product = mappify.Map<Product>(new ReplaceProductCommand(id, request));
         var wasReplaced = await productRepository.ReplaceAsync(product, cancellationToken);
 
         return wasReplaced ? mappify.Map<ProductDto>(product) : null;

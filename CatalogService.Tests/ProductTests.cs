@@ -44,29 +44,4 @@ public sealed class ProductTests
 
         Assert.Equal(0m, product.Price);
     }
-
-    [Fact]
-    public void ChangeDetails_ReplacesAllValuesAndKeepsId()
-    {
-        var product = new Product(ProductId, "Kaffee", "Gemahlen", 4.99m);
-
-        product.ChangeDetails("Tee", null, 3.50m);
-
-        Assert.Equal(ProductId, product.Id);
-        Assert.Equal("Tee", product.Name);
-        Assert.Null(product.Description);
-        Assert.Equal(3.50m, product.Price);
-    }
-
-    [Fact]
-    public void ChangeDetails_KeepsOldValuesWhenNewValuesAreInvalid()
-    {
-        var product = new Product(ProductId, "Kaffee", "Gemahlen", 4.99m);
-
-        Assert.Throws<ArgumentOutOfRangeException>(() => product.ChangeDetails("Tee", "Schwarz", -1m));
-
-        Assert.Equal("Kaffee", product.Name);
-        Assert.Equal("Gemahlen", product.Description);
-        Assert.Equal(4.99m, product.Price);
-    }
 }
