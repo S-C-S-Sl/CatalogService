@@ -71,7 +71,7 @@ Die Container-Tests starten ihre MongoDB selbst und brauchen dafür eine laufend
 
 | Workflow | Aufgabe | Läuft bei |
 |---|---|---|
-| `ci.yml` | bauen und testen, veröffentlicht nichts | immer: jeder Push auf jeden Branch und jeder Pull Request |
+| `ci.yml` | bauen und testen (Job "Build"), veröffentlicht nichts | immer: jeder Push auf jeden Branch und jeder Pull Request |
 | `publish.yml` | Version bestimmen (GitVersion), Image bauen und nach `ghcr.io/s-c-s-sl/catalogservice` veröffentlichen | nur beim Merge eines Pull Requests nach `master` oder `develop` (Push auf diesen Branch) und bei Tags `v*` |
 
 Die beiden Workflows sind voneinander unabhängig. `publish.yml` führt keine Tests aus und wartet nicht auf `ci.yml`. Damit nur geprüfter Code veröffentlicht wird, sollte der Schutz der Branches `master` und `develop` einen grünen CI-Lauf vor dem Merge verlangen.
