@@ -70,7 +70,7 @@ jobs:
       - name: Build
         run: dotnet build CatalogService.slnx -c Release --no-restore
 
-      # Noch keine Testprojekte vorhanden; der Schritt ist für später vorbereitet
+      # Die Tests gegen MongoDB starten ihre Datenbank selbst im Container (Docker ist auf ubuntu-latest vorhanden)
       - name: Test
         run: dotnet test CatalogService.slnx -c Release --no-build
 
