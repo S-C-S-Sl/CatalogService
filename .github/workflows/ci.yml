@@ -1,0 +1,44 @@
+# Continuous Integration: baut und testet den CatalogService, veröffentlicht nichts.
+#
+#   Pull Request                              -> bauen und testen
+#   Push auf andere Branches (z. B. bugfix/**) -> bauen und testen
+#   Push auf master/develop/feature/**        -> übernimmt publish.yml, das diesen Ablauf als ersten Schritt
+#                                                aufruft und nur bei Erfolg veröffentlicht
+#
+# Die Container-Tests starten ihre MongoDB selbst; Docker ist auf ubuntu-latest vorhanden.
+name: ci
+
+on:
+  push:
+    branches-ignore: [master, develop, "feature/**"]
+  pull_request:
+  workflow_call:
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: "10.0.x"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Bauen und testen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # GitVersion.MsBuild braucht die Historie
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore CatalogService.slnx
+
+      - name: Build
+        run: dotnet build CatalogService.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test CatalogService.slnx -c Release --no-build

@@ -67,6 +67,13 @@ dotnet test CatalogService.slnx
 
 Die Container-Tests starten ihre MongoDB selbst und brauchen dafür eine laufende Docker-Engine. Ohne Docker schlagen sie fehl, die übrigen Tests laufen.
 
+## Pipeline (GitHub Actions)
+
+| Workflow | Aufgabe | Läuft bei |
+|---|---|---|
+| `ci.yml` | bauen und testen, veröffentlicht nichts | Pull Request, Push auf andere Branches (z. B. `bugfix/**`) |
+| `publish.yml` | ruft zuerst `ci.yml` auf, bei Erfolg Version bestimmen (GitVersion), Image bauen und nach `ghcr.io/s-c-s-sl/catalogservice` veröffentlichen | Push auf `master`, `develop`, `feature/**` und Tags `v*` |
+
 ## Bekannte offene Punkte
 
 - `/health/ready` prüft die Datenbank nicht und meldet auch dann 200, wenn MongoDB nicht erreichbar ist.

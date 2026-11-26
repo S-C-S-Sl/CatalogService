@@ -1,4 +1,7 @@
-# Versioniert, baut, testet und veröffentlicht das Container-Image des CatalogService.
+# Veröffentlicht das Container-Image des CatalogService nach ghcr.io.
+#
+#   Zuerst läuft der CI-Ablauf (ci.yml: bauen und testen). Nur wenn er grün ist, wird das Image gebaut
+#   und veröffentlicht.
 #
 #   Version: GitVersion aus der Git-Historie (GitVersion.yml, GitFlow).
 #            In der DLL setzt sie das NuGet-Paket GitVersion.MsBuild beim Build (auch im Dockerfile),
@@ -6,25 +9,27 @@
 #   Push auf master/develop/feature/**  -> Image mit Versions-, Branch- und Commit-Tag nach ghcr.io
 #                                          (alle Tags aus GitVersion)
 #   Tag v1.2.3 auf master               -> Image 1.2.3
-#   Pull Request                        -> nur bauen und testen, nichts veröffentlichen
-name: build
+name: publish
 
 on:
   push:
     branches: [master, develop, "feature/**"]
     tags: ["v*"]
-  pull_request:
   workflow_dispatch:
 
 env:
   # Image-Namen müssen klein geschrieben sein
-  IMAGE: ghcr.io/sschabbach-mse/catalogservice
+  IMAGE: ghcr.io/s-c-s-sl/catalogservice
   DOTNET_VERSION: "10.0.x"
 
 permissions:
   contents: read
 
 jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
   version:
     name: Version bestimmen
     runs-on: ubuntu-latest
@@ -52,31 +57,9 @@ jobs:
       - name: Version anzeigen
         run: echo "### Version ${{ steps.gitversion.outputs.semVer }}" >> "$GITHUB_STEP_SUMMARY"
 
-  build:
-    name: Bauen und testen
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0   # GitVersion.MsBuild braucht die Historie
-
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Restore
-        run: dotnet restore CatalogService.slnx
-
-      - name: Build
-        run: dotnet build CatalogService.slnx -c Release --no-restore
-
-      # Die Tests gegen MongoDB starten ihre Datenbank selbst im Container (Docker ist auf ubuntu-latest vorhanden)
-      - name: Test
-        run: dotnet test CatalogService.slnx -c Release --no-build
-
   image:
     name: Container-Image
-    needs: [version, build]
+    needs: [ci, version]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -107,7 +90,6 @@ jobs:
       - uses: docker/setup-buildx-action@v4
 
       - name: Anmelden an ghcr.io
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -119,7 +101,7 @@ jobs:
         with:
           context: .
           file: CatalogService.Api/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.tags.outputs.tags }}
           # OCI-Labels: "source" verknüpft das Paket auf ghcr.io mit diesem Repo
           labels: |
