@@ -12,7 +12,7 @@ namespace CatalogService.Api.Controllers
         [HttpGet]
         public async Task<ActionResult<IReadOnlyList<ProductDto>>> GetAll(CancellationToken cancellationToken)
         {
-            var products = await productInteractor.GetAllAsync(cancellationToken);
+            var products = await productInteractor.GetAllAsync(cancellationToken).ToListAsync(cancellationToken);
 
             return Ok(products);
         }

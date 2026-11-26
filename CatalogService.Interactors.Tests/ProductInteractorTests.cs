@@ -1,4 +1,3 @@
-using CatalogService.Interactors;
 using CatalogService.Logic;
 using CatalogService.Resources;
 using Mappify;
@@ -27,103 +26,124 @@ public sealed class ProductInteractorTests
     }
 
     [Fact]
-    public async Task CreateAsync_StoresProductWithGeneratedId()
+    public async Task CreateAsync_RequestIsValid_StoresProductWithGeneratedId()
     {
-        productIdGenerator.Generate().Returns(ProductId);
-        var request = new CreateProductRequest("Kaffee", "Gemahlen", 4.99m);
+        var expectedId = ProductId;
+        var expectedName = "Kaffee";
+        var expectedDescription = "Gemahlen";
+        var expectedPrice = 4.99m;
+        productIdGenerator.Generate().Returns(expectedId);
+        var request = new CreateProductRequest(expectedName, expectedDescription, expectedPrice);
 
         await productInteractor.CreateAsync(request);
 
         await productRepository.Received(1).AddAsync(
-            Arg.Is<Product>(product => product.Id == ProductId
-                                       && product.Name == "Kaffee"
-                                       && product.Description == "Gemahlen"
-                                       && product.Price == 4.99m),
+            Arg.Is<Product>(product => product.Id == expectedId
+                                       && product.Name == expectedName
+                                       && product.Description == expectedDescription
+                                       && product.Price == expectedPrice),
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task CreateAsync_ReturnsTheSavedValues()
+    public async Task CreateAsync_RequestIsValid_ReturnsTheSavedValues()
     {
+        var expectedProduct = new ProductDto(ProductId, "Kaffee", "Gemahlen", 4.99m);
         productIdGenerator.Generate().Returns(ProductId);
         var request = new CreateProductRequest("Kaffee", "Gemahlen", 4.99m);
 
-        var created = await productInteractor.CreateAsync(request);
+        var actualProduct = await productInteractor.CreateAsync(request);
 
-        Assert.Equal(new ProductDto(ProductId, "Kaffee", "Gemahlen", 4.99m), created);
+        Assert.Equal(expectedProduct, actualProduct);
     }
 
     [Fact]
-    public async Task GetAsync_ReturnsTheStoredProduct()
+    public async Task GetAsync_ProductExists_ReturnsProductDto()
     {
+        var expectedProduct = new ProductDto(ProductId, "Kaffee", "Gemahlen", 4.99m);
         productRepository.GetAsync(ProductId, Arg.Any<CancellationToken>())
             .Returns(new Product(ProductId, "Kaffee", "Gemahlen", 4.99m));
 
-        var found = await productInteractor.GetAsync(ProductId);
+        var actualProduct = await productInteractor.GetAsync(ProductId);
 
-        Assert.Equal(new ProductDto(ProductId, "Kaffee", "Gemahlen", 4.99m), found);
+        Assert.Equal(expectedProduct, actualProduct);
     }
 
     [Fact]
-    public async Task GetAsync_ReturnsNullWhenProductDoesNotExist()
+    public async Task GetAsync_ProductDoesNotExist_ReturnsNull()
     {
         productRepository.GetAsync(ProductId, Arg.Any<CancellationToken>()).Returns((Product?)null);
 
-        var found = await productInteractor.GetAsync(ProductId);
+        var actualProduct = await productInteractor.GetAsync(ProductId);
 
-        Assert.Null(found);
+        Assert.Null(actualProduct);
     }
 
     [Fact]
-    public async Task GetAllAsync_ReturnsAllStoredProducts()
+    public async Task GetAllAsync_ProductsExist_ReturnsAllProductDtos()
     {
         var otherProductId = Guid.Parse("33333333-3333-3333-3333-333333333333");
-        IReadOnlyList<Product> storedProducts =
-        [
+        var storedProducts = new[]
+        {
             new Product(ProductId, "Kaffee", null, 4.99m),
             new Product(otherProductId, "Tee", "Schwarz", 3.50m)
-        ];
-        productRepository.GetAllAsync(Arg.Any<CancellationToken>()).Returns(storedProducts);
+        };
+        var expectedProducts = new[]
+        {
+            new ProductDto(ProductId, "Kaffee", null, 4.99m),
+            new ProductDto(otherProductId, "Tee", "Schwarz", 3.50m)
+        };
+        productRepository.GetAllAsync(Arg.Any<CancellationToken>()).Returns(storedProducts.ToAsyncEnumerable());
 
-        var products = await productInteractor.GetAllAsync();
+        var actualProducts = await productInteractor.GetAllAsync().ToListAsync();
 
-        Assert.Equal(
-            [new ProductDto(ProductId, "Kaffee", null, 4.99m), new ProductDto(otherProductId, "Tee", "Schwarz", 3.50m)],
-            products);
+        Assert.Equal(expectedProducts, actualProducts);
     }
 
     [Fact]
-    public async Task UpdateAsync_ReplacesTheStoredProductAndKeepsItsId()
+    public async Task UpdateAsync_ProductExists_ReplacesProductAndKeepsItsId()
     {
+        var expectedId = ProductId;
+        var expectedName = "Tee";
+        var expectedPrice = 3.50m;
+        var expectedProduct = new ProductDto(expectedId, expectedName, null, expectedPrice);
         productRepository.ReplaceAsync(Arg.Any<Product>(), Arg.Any<CancellationToken>()).Returns(true);
 
-        var updated = await productInteractor.UpdateAsync(ProductId, new UpdateProductRequest("Tee", null, 3.50m));
+        var actualProduct = await productInteractor.UpdateAsync(expectedId, new UpdateProductRequest(expectedName, null, expectedPrice));
 
-        Assert.Equal(new ProductDto(ProductId, "Tee", null, 3.50m), updated);
+        Assert.Equal(expectedProduct, actualProduct);
         await productRepository.Received(1).ReplaceAsync(
-            Arg.Is<Product>(product => product.Id == ProductId && product.Name == "Tee" && product.Price == 3.50m),
+            Arg.Is<Product>(product => product.Id == expectedId && product.Name == expectedName && product.Price == expectedPrice),
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task UpdateAsync_ReturnsNullWhenProductDoesNotExist()
+    public async Task UpdateAsync_ProductDoesNotExist_ReturnsNull()
     {
         productRepository.ReplaceAsync(Arg.Any<Product>(), Arg.Any<CancellationToken>()).Returns(false);
 
-        var updated = await productInteractor.UpdateAsync(ProductId, new UpdateProductRequest("Tee", null, 3.50m));
+        var actualProduct = await productInteractor.UpdateAsync(ProductId, new UpdateProductRequest("Tee", null, 3.50m));
 
-        Assert.Null(updated);
+        Assert.Null(actualProduct);
     }
 
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task DeleteAsync_ReturnsWhetherTheProductExisted(bool existed)
+    [Fact]
+    public async Task DeleteAsync_ProductExisted_ReturnsTrue()
     {
-        productRepository.DeleteAsync(ProductId, Arg.Any<CancellationToken>()).Returns(existed);
+        productRepository.DeleteAsync(ProductId, Arg.Any<CancellationToken>()).Returns(true);
 
-        var deleted = await productInteractor.DeleteAsync(ProductId);
+        var actualWasDeleted = await productInteractor.DeleteAsync(ProductId);
 
-        Assert.Equal(existed, deleted);
+        Assert.True(actualWasDeleted);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ProductDidNotExist_ReturnsFalse()
+    {
+        productRepository.DeleteAsync(ProductId, Arg.Any<CancellationToken>()).Returns(false);
+
+        var actualWasDeleted = await productInteractor.DeleteAsync(ProductId);
+
+        Assert.False(actualWasDeleted);
     }
 }

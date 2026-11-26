@@ -10,31 +10,36 @@ namespace CatalogService.Api.Tests;
 public sealed class ProductsControllerContractTests
 {
     [Fact]
-    public void Controller_IsAnApiController()
+    public void ProductsController_ClassAttributes_IsMarkedAsApiController()
     {
-        var attribute = typeof(ProductsController).GetCustomAttribute<ApiControllerAttribute>();
+        var actualAttribute = typeof(ProductsController).GetCustomAttribute<ApiControllerAttribute>();
 
-        Assert.NotNull(attribute);
+        Assert.NotNull(actualAttribute);
     }
 
     [Fact]
-    public void Controller_IsOfferedInApiVersion1()
+    public void ProductsController_ClassAttributes_IsOfferedInApiVersion1()
     {
-        var attribute = typeof(ProductsController).GetCustomAttribute<ApiVersionAttribute>();
+        var expectedMajorVersion = 1;
+        var expectedMinorVersion = 0;
 
-        Assert.NotNull(attribute);
-        var version = Assert.Single(attribute.Versions);
-        Assert.Equal(1, version.MajorVersion);
-        Assert.Equal(0, version.MinorVersion);
+        var actualAttribute = typeof(ProductsController).GetCustomAttribute<ApiVersionAttribute>();
+
+        Assert.NotNull(actualAttribute);
+        var actualVersion = Assert.Single(actualAttribute.Versions);
+        Assert.Equal(expectedMajorVersion, actualVersion.MajorVersion);
+        Assert.Equal(expectedMinorVersion, actualVersion.MinorVersion);
     }
 
     [Fact]
-    public void Controller_IsReachableUnderTheVersionedProductsPath()
+    public void ProductsController_ClassAttributes_UsesTheVersionedProductsPath()
     {
-        var attribute = typeof(ProductsController).GetCustomAttribute<RouteAttribute>();
+        var expectedTemplate = "v{version:apiVersion}/products";
 
-        Assert.NotNull(attribute);
-        Assert.Equal("v{version:apiVersion}/products", attribute.Template);
+        var actualAttribute = typeof(ProductsController).GetCustomAttribute<RouteAttribute>();
+
+        Assert.NotNull(actualAttribute);
+        Assert.Equal(expectedTemplate, actualAttribute.Template);
     }
 
     [Theory]
@@ -43,13 +48,13 @@ public sealed class ProductsControllerContractTests
     [InlineData(nameof(ProductsController.Create), "POST", null)]
     [InlineData(nameof(ProductsController.Update), "PUT", "{id:guid}")]
     [InlineData(nameof(ProductsController.Delete), "DELETE", "{id:guid}")]
-    public void Action_IsReachableThroughTheExpectedHttpMethodAndPath(string actionName, string httpMethod, string? pathTemplate)
+    public void Action_HttpAttribute_ExposesExpectedHttpMethodAndPath(string actionName, string expectedHttpMethod, string? expectedTemplate)
     {
         var action = typeof(ProductsController).GetMethod(actionName);
 
         Assert.NotNull(action);
-        var attribute = Assert.Single(action.GetCustomAttributes<HttpMethodAttribute>());
-        Assert.Equal(httpMethod, Assert.Single(attribute.HttpMethods));
-        Assert.Equal(pathTemplate, attribute.Template);
+        var actualAttribute = Assert.Single(action.GetCustomAttributes<HttpMethodAttribute>());
+        Assert.Equal(expectedHttpMethod, Assert.Single(actualAttribute.HttpMethods));
+        Assert.Equal(expectedTemplate, actualAttribute.Template);
     }
 }

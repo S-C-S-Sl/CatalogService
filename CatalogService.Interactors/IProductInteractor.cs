@@ -2,7 +2,7 @@
 
 public interface IProductInteractor
 {
-    Task<IReadOnlyList<ProductDto>> GetAllAsync(CancellationToken cancellationToken = default);
+    IAsyncEnumerable<ProductDto> GetAllAsync(CancellationToken cancellationToken = default);
 
     /// <returns>Das Produkt oder <c>null</c>, wenn es nicht existiert.</returns>
     Task<ProductDto?> GetAsync(Guid id, CancellationToken cancellationToken = default);

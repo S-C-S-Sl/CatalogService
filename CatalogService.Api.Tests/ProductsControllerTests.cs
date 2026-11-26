@@ -21,155 +21,171 @@ public sealed class ProductsControllerTests
     }
 
     [Fact]
-    public async Task GetAll_AnswersWithStatus200AndAllProducts()
+    public async Task GetAll_ProductsExist_ReturnsStatus200WithAllProducts()
     {
-        IReadOnlyList<ProductDto> products = [ExampleProduct];
-        productInteractor.GetAllAsync(Arg.Any<CancellationToken>()).Returns(products);
+        var expectedStatusCode = StatusCodes.Status200OK;
+        ProductDto[] expectedProducts = [ExampleProduct];
+        productInteractor.GetAllAsync(Arg.Any<CancellationToken>()).Returns(expectedProducts.ToAsyncEnumerable());
 
-        var response = await productsController.GetAll(CancellationToken.None);
+        var actualResponse = await productsController.GetAll(CancellationToken.None);
 
-        var okResult = Assert.IsType<OkObjectResult>(response.Result);
-        Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
-        Assert.Equal(products, okResult.Value);
+        var okResult = Assert.IsType<OkObjectResult>(actualResponse.Result);
+        Assert.Equal(expectedStatusCode, okResult.StatusCode);
+        Assert.Equal(expectedProducts, Assert.IsAssignableFrom<IEnumerable<ProductDto>>(okResult.Value));
     }
 
     [Fact]
-    public async Task GetAll_AnswersWithStatus200AndAnEmptyListWhenNoProductsExist()
+    public async Task GetAll_NoProductsExist_ReturnsStatus200WithEmptyList()
     {
-        IReadOnlyList<ProductDto> noProducts = [];
-        productInteractor.GetAllAsync(Arg.Any<CancellationToken>()).Returns(noProducts);
+        var expectedStatusCode = StatusCodes.Status200OK;
+        ProductDto[] noProducts = [];
+        productInteractor.GetAllAsync(Arg.Any<CancellationToken>()).Returns(noProducts.ToAsyncEnumerable());
 
-        var response = await productsController.GetAll(CancellationToken.None);
+        var actualResponse = await productsController.GetAll(CancellationToken.None);
 
-        var okResult = Assert.IsType<OkObjectResult>(response.Result);
-        Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
-        Assert.Empty(Assert.IsAssignableFrom<IReadOnlyList<ProductDto>>(okResult.Value));
+        var okResult = Assert.IsType<OkObjectResult>(actualResponse.Result);
+        Assert.Equal(expectedStatusCode, okResult.StatusCode);
+        Assert.Empty(Assert.IsAssignableFrom<IEnumerable<ProductDto>>(okResult.Value));
     }
 
     [Fact]
-    public async Task Get_AnswersWithStatus200AndTheProduct()
+    public async Task Get_ProductExists_ReturnsStatus200WithProduct()
     {
-        productInteractor.GetAsync(ProductId, Arg.Any<CancellationToken>()).Returns(ExampleProduct);
+        var expectedStatusCode = StatusCodes.Status200OK;
+        var expectedProduct = ExampleProduct;
+        productInteractor.GetAsync(ProductId, Arg.Any<CancellationToken>()).Returns(expectedProduct);
 
-        var response = await productsController.Get(ProductId, CancellationToken.None);
+        var actualResponse = await productsController.Get(ProductId, CancellationToken.None);
 
-        var okResult = Assert.IsType<OkObjectResult>(response.Result);
-        Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
-        Assert.Equal(ExampleProduct, okResult.Value);
+        var okResult = Assert.IsType<OkObjectResult>(actualResponse.Result);
+        Assert.Equal(expectedStatusCode, okResult.StatusCode);
+        Assert.Equal(expectedProduct, okResult.Value);
     }
 
     [Fact]
-    public async Task Get_AnswersWithStatus404WhenProductDoesNotExist()
+    public async Task Get_ProductDoesNotExist_ReturnsStatus404()
     {
+        var expectedStatusCode = StatusCodes.Status404NotFound;
         productInteractor.GetAsync(ProductId, Arg.Any<CancellationToken>()).Returns((ProductDto?)null);
 
-        var response = await productsController.Get(ProductId, CancellationToken.None);
+        var actualResponse = await productsController.Get(ProductId, CancellationToken.None);
 
-        var notFoundResult = Assert.IsType<NotFoundResult>(response.Result);
-        Assert.Equal(StatusCodes.Status404NotFound, notFoundResult.StatusCode);
+        var notFoundResult = Assert.IsType<NotFoundResult>(actualResponse.Result);
+        Assert.Equal(expectedStatusCode, notFoundResult.StatusCode);
     }
 
     [Fact]
-    public async Task Get_AsksTheInteractorForTheRequestedProduct()
+    public async Task Get_ProductIdRequested_AsksInteractorForThatProduct()
     {
+        var expectedId = ProductId;
         using var cancellationTokenSource = new CancellationTokenSource();
 
-        await productsController.Get(ProductId, cancellationTokenSource.Token);
+        await productsController.Get(expectedId, cancellationTokenSource.Token);
 
-        await productInteractor.Received(1).GetAsync(ProductId, cancellationTokenSource.Token);
+        await productInteractor.Received(1).GetAsync(expectedId, cancellationTokenSource.Token);
     }
 
     [Fact]
-    public async Task Create_AnswersWithStatus201AndTheCreatedProduct()
+    public async Task Create_RequestIsValid_ReturnsStatus201WithCreatedProduct()
     {
+        var expectedStatusCode = StatusCodes.Status201Created;
+        var expectedProduct = ExampleProduct;
+        var request = new CreateProductRequest("Kaffee", "Gemahlen", 4.99m);
+        productInteractor.CreateAsync(request, Arg.Any<CancellationToken>()).Returns(expectedProduct);
+
+        var actualResponse = await productsController.Create(request, CancellationToken.None);
+
+        var createdResult = Assert.IsType<CreatedAtRouteResult>(actualResponse.Result);
+        Assert.Equal(expectedStatusCode, createdResult.StatusCode);
+        Assert.Equal(expectedProduct, createdResult.Value);
+    }
+
+    [Fact]
+    public async Task Create_RequestIsValid_PointsLocationToNewProduct()
+    {
+        var expectedRouteName = nameof(ProductsController.Get);
+        var expectedId = ProductId;
         var request = new CreateProductRequest("Kaffee", "Gemahlen", 4.99m);
         productInteractor.CreateAsync(request, Arg.Any<CancellationToken>()).Returns(ExampleProduct);
 
-        var response = await productsController.Create(request, CancellationToken.None);
+        var actualResponse = await productsController.Create(request, CancellationToken.None);
 
-        var createdResult = Assert.IsType<CreatedAtRouteResult>(response.Result);
-        Assert.Equal(StatusCodes.Status201Created, createdResult.StatusCode);
-        Assert.Equal(ExampleProduct, createdResult.Value);
+        var createdResult = Assert.IsType<CreatedAtRouteResult>(actualResponse.Result);
+        Assert.Equal(expectedRouteName, createdResult.RouteName);
+        Assert.Equal(expectedId, createdResult.RouteValues!["id"]);
     }
 
     [Fact]
-    public async Task Create_PointsTheLocationToTheNewProduct()
+    public async Task Create_RequestIsValid_PassesRequestToInteractor()
     {
-        var request = new CreateProductRequest("Kaffee", "Gemahlen", 4.99m);
-        productInteractor.CreateAsync(request, Arg.Any<CancellationToken>()).Returns(ExampleProduct);
+        var expectedRequest = new CreateProductRequest("Kaffee", "Gemahlen", 4.99m);
+        productInteractor.CreateAsync(expectedRequest, Arg.Any<CancellationToken>()).Returns(ExampleProduct);
 
-        var response = await productsController.Create(request, CancellationToken.None);
+        await productsController.Create(expectedRequest, CancellationToken.None);
 
-        var createdResult = Assert.IsType<CreatedAtRouteResult>(response.Result);
-        Assert.Equal(nameof(ProductsController.Get), createdResult.RouteName);
-        Assert.Equal(ProductId, createdResult.RouteValues!["id"]);
+        await productInteractor.Received(1).CreateAsync(expectedRequest, Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Create_PassesTheRequestToTheInteractor()
+    public async Task Update_ProductExists_ReturnsStatus200WithChangedProduct()
     {
-        var request = new CreateProductRequest("Kaffee", "Gemahlen", 4.99m);
-        productInteractor.CreateAsync(request, Arg.Any<CancellationToken>()).Returns(ExampleProduct);
-
-        await productsController.Create(request, CancellationToken.None);
-
-        await productInteractor.Received(1).CreateAsync(request, Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task Update_AnswersWithStatus200AndTheChangedProduct()
-    {
+        var expectedStatusCode = StatusCodes.Status200OK;
+        var expectedProduct = ExampleProduct;
         var request = new UpdateProductRequest("Kaffee", "Gemahlen", 4.99m);
-        productInteractor.UpdateAsync(ProductId, request, Arg.Any<CancellationToken>()).Returns(ExampleProduct);
+        productInteractor.UpdateAsync(ProductId, request, Arg.Any<CancellationToken>()).Returns(expectedProduct);
 
-        var response = await productsController.Update(ProductId, request, CancellationToken.None);
+        var actualResponse = await productsController.Update(ProductId, request, CancellationToken.None);
 
-        var okResult = Assert.IsType<OkObjectResult>(response.Result);
-        Assert.Equal(StatusCodes.Status200OK, okResult.StatusCode);
-        Assert.Equal(ExampleProduct, okResult.Value);
+        var okResult = Assert.IsType<OkObjectResult>(actualResponse.Result);
+        Assert.Equal(expectedStatusCode, okResult.StatusCode);
+        Assert.Equal(expectedProduct, okResult.Value);
     }
 
     [Fact]
-    public async Task Update_AnswersWithStatus404WhenProductDoesNotExist()
+    public async Task Update_ProductDoesNotExist_ReturnsStatus404()
     {
+        var expectedStatusCode = StatusCodes.Status404NotFound;
         var request = new UpdateProductRequest("Kaffee", "Gemahlen", 4.99m);
         productInteractor.UpdateAsync(ProductId, request, Arg.Any<CancellationToken>()).Returns((ProductDto?)null);
 
-        var response = await productsController.Update(ProductId, request, CancellationToken.None);
+        var actualResponse = await productsController.Update(ProductId, request, CancellationToken.None);
 
-        var notFoundResult = Assert.IsType<NotFoundResult>(response.Result);
-        Assert.Equal(StatusCodes.Status404NotFound, notFoundResult.StatusCode);
+        var notFoundResult = Assert.IsType<NotFoundResult>(actualResponse.Result);
+        Assert.Equal(expectedStatusCode, notFoundResult.StatusCode);
     }
 
     [Fact]
-    public async Task Update_PassesIdAndRequestToTheInteractor()
+    public async Task Update_RequestIsValid_PassesIdAndRequestToInteractor()
     {
-        var request = new UpdateProductRequest("Kaffee", "Gemahlen", 4.99m);
+        var expectedId = ProductId;
+        var expectedRequest = new UpdateProductRequest("Kaffee", "Gemahlen", 4.99m);
 
-        await productsController.Update(ProductId, request, CancellationToken.None);
+        await productsController.Update(expectedId, expectedRequest, CancellationToken.None);
 
-        await productInteractor.Received(1).UpdateAsync(ProductId, request, Arg.Any<CancellationToken>());
+        await productInteractor.Received(1).UpdateAsync(expectedId, expectedRequest, Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Delete_AnswersWithStatus204WhenProductExisted()
+    public async Task Delete_ProductExisted_ReturnsStatus204()
     {
+        var expectedStatusCode = StatusCodes.Status204NoContent;
         productInteractor.DeleteAsync(ProductId, Arg.Any<CancellationToken>()).Returns(true);
 
-        var response = await productsController.Delete(ProductId, CancellationToken.None);
+        var actualResponse = await productsController.Delete(ProductId, CancellationToken.None);
 
-        var noContentResult = Assert.IsType<NoContentResult>(response);
-        Assert.Equal(StatusCodes.Status204NoContent, noContentResult.StatusCode);
+        var noContentResult = Assert.IsType<NoContentResult>(actualResponse);
+        Assert.Equal(expectedStatusCode, noContentResult.StatusCode);
     }
 
     [Fact]
-    public async Task Delete_AnswersWithStatus404WhenProductDoesNotExist()
+    public async Task Delete_ProductDidNotExist_ReturnsStatus404()
     {
+        var expectedStatusCode = StatusCodes.Status404NotFound;
         productInteractor.DeleteAsync(ProductId, Arg.Any<CancellationToken>()).Returns(false);
 
-        var response = await productsController.Delete(ProductId, CancellationToken.None);
+        var actualResponse = await productsController.Delete(ProductId, CancellationToken.None);
 
-        var notFoundResult = Assert.IsType<NotFoundResult>(response);
-        Assert.Equal(StatusCodes.Status404NotFound, notFoundResult.StatusCode);
+        var notFoundResult = Assert.IsType<NotFoundResult>(actualResponse);
+        Assert.Equal(expectedStatusCode, notFoundResult.StatusCode);
     }
 }

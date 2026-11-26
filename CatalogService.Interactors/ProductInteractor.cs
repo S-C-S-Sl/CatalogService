@@ -6,11 +6,11 @@ namespace CatalogService.Interactors;
 
 public sealed class ProductInteractor(IProductRepository productRepository, IMappify mappify) : IProductInteractor
 {
-    public async Task<IReadOnlyList<ProductDto>> GetAllAsync(CancellationToken cancellationToken = default)
+    public IAsyncEnumerable<ProductDto> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        var products = await productRepository.GetAllAsync(cancellationToken);
-
-        return products.Select(product => mappify.Map<ProductDto>(product)).ToList();
+        return productRepository
+            .GetAllAsync(cancellationToken)
+            .Select(product => mappify.Map<ProductDto>(product));
     }
 
     public async Task<ProductDto?> GetAsync(Guid id, CancellationToken cancellationToken = default)

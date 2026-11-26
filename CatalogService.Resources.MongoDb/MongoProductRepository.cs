@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using CatalogService.Logic;
 using Mappify;
 using MongoDB.Driver;
@@ -7,14 +8,17 @@ namespace CatalogService.Resources.MongoDb;
 public sealed class MongoProductRepository(IMongoCollection<ProductDocument> productCollection, IMappify mappify)
     : IProductRepository
 {
-    public async Task<IReadOnlyList<Product>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<Product> GetAllAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var documents = await productCollection
+        var documents = productCollection
             .Find(FilterDefinition<ProductDocument>.Empty)
             .SortBy(document => document.Name)
-            .ToListAsync(cancellationToken);
+            .ToAsyncEnumerable();
 
-        return documents.Select(document => mappify.Map<Product>(document)).ToList();
+        await foreach (var document in documents.WithCancellation(cancellationToken))
+        {
+            yield return mappify.Map<Product>(document);
+        }
     }
 
     public async Task<Product?> GetAsync(Guid id, CancellationToken cancellationToken = default)

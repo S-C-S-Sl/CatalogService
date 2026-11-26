@@ -13,116 +13,130 @@ public sealed class MongoProductRepositoryTests(MongoDbFixture mongoDbFixture) :
     private static readonly Guid BreadId = Guid.Parse("cccccccc-cccc-cccc-cccc-cccccccccccc");
 
     [Fact]
-    public async Task AddAsync_StoresTheProductWithAllValues()
+    public async Task AddAsync_ProductHasAllValues_StoresAllValues()
     {
+        var expectedId = CoffeeId;
+        var expectedName = "Kaffee";
+        var expectedDescription = "Gemahlen";
+        var expectedPrice = 1234.5678m;
         var productRepository = CreateProductRepository();
-        await productRepository.AddAsync(new Product(CoffeeId, "Kaffee", "Gemahlen", 1234.5678m));
 
-        var stored = await productRepository.GetAsync(CoffeeId);
+        await productRepository.AddAsync(new Product(expectedId, expectedName, expectedDescription, expectedPrice));
 
-        Assert.NotNull(stored);
-        Assert.Equal(CoffeeId, stored.Id);
-        Assert.Equal("Kaffee", stored.Name);
-        Assert.Equal("Gemahlen", stored.Description);
-        Assert.Equal(1234.5678m, stored.Price);
+        var actualProduct = await productRepository.GetAsync(expectedId);
+        Assert.NotNull(actualProduct);
+        Assert.Equal(expectedId, actualProduct.Id);
+        Assert.Equal(expectedName, actualProduct.Name);
+        Assert.Equal(expectedDescription, actualProduct.Description);
+        Assert.Equal(expectedPrice, actualProduct.Price);
     }
 
     [Fact]
-    public async Task AddAsync_StoresTheProductWithoutDescription()
+    public async Task AddAsync_NoDescription_StoresProductWithoutDescription()
     {
+        var name = "Kaffee";
         var productRepository = CreateProductRepository();
-        await productRepository.AddAsync(new Product(CoffeeId, "Kaffee", null, 4.99m));
 
-        var stored = await productRepository.GetAsync(CoffeeId);
+        await productRepository.AddAsync(new Product(CoffeeId, name, null, 4.99m));
 
-        Assert.NotNull(stored);
-        Assert.Null(stored.Description);
+        var actualProduct = await productRepository.GetAsync(CoffeeId);
+        Assert.NotNull(actualProduct);
+        Assert.Null(actualProduct.Description);
     }
 
     [Fact]
-    public async Task GetAsync_ReturnsNullWhenProductDoesNotExist()
+    public async Task GetAsync_ProductDoesNotExist_ReturnsNull()
     {
         var productRepository = CreateProductRepository();
 
-        var stored = await productRepository.GetAsync(CoffeeId);
+        var actualProduct = await productRepository.GetAsync(CoffeeId);
 
-        Assert.Null(stored);
+        Assert.Null(actualProduct);
     }
 
     [Fact]
-    public async Task GetAllAsync_ReturnsProductsSortedByName()
+    public async Task GetAllAsync_ProductsExist_ReturnsProductsSortedByName()
     {
+        var breadName = "Brot";
+        var coffeeName = "Kaffee";
+        var teaName = "Tee";
+        string[] expectedNames = [breadName, coffeeName, teaName];
         var productRepository = CreateProductRepository();
-        await productRepository.AddAsync(new Product(TeaId, "Tee", null, 3.50m));
-        await productRepository.AddAsync(new Product(CoffeeId, "Kaffee", null, 4.99m));
-        await productRepository.AddAsync(new Product(BreadId, "Brot", null, 2.20m));
+        await productRepository.AddAsync(new Product(TeaId, teaName, null, 3.50m));
+        await productRepository.AddAsync(new Product(CoffeeId, coffeeName, null, 4.99m));
+        await productRepository.AddAsync(new Product(BreadId, breadName, null, 2.20m));
 
-        var products = await productRepository.GetAllAsync();
+        var actualProducts = await productRepository.GetAllAsync().ToListAsync();
 
-        Assert.Equal(["Brot", "Kaffee", "Tee"], products.Select(product => product.Name));
+        var actualNames = actualProducts.Select(product => product.Name);
+        Assert.Equal(expectedNames, actualNames);
     }
 
     [Fact]
-    public async Task ReplaceAsync_ReplacesAllValuesOfTheStoredProduct()
+    public async Task ReplaceAsync_ProductExists_ReplacesAllValues()
     {
+        var expectedName = "Espresso";
+        var expectedPrice = 5.50m;
         var productRepository = CreateProductRepository();
         await productRepository.AddAsync(new Product(CoffeeId, "Kaffee", "Gemahlen", 4.99m));
 
-        var wasReplaced = await productRepository.ReplaceAsync(new Product(CoffeeId, "Espresso", null, 5.50m));
+        var actualWasReplaced = await productRepository.ReplaceAsync(new Product(CoffeeId, expectedName, null, expectedPrice));
 
-        var stored = await productRepository.GetAsync(CoffeeId);
-        Assert.True(wasReplaced);
-        Assert.NotNull(stored);
-        Assert.Equal("Espresso", stored.Name);
-        Assert.Null(stored.Description);
-        Assert.Equal(5.50m, stored.Price);
+        Assert.True(actualWasReplaced);
+        var actualProduct = await productRepository.GetAsync(CoffeeId);
+        Assert.NotNull(actualProduct);
+        Assert.Equal(expectedName, actualProduct.Name);
+        Assert.Null(actualProduct.Description);
+        Assert.Equal(expectedPrice, actualProduct.Price);
     }
 
     [Fact]
-    public async Task ReplaceAsync_ReturnsFalseWhenProductDoesNotExist()
+    public async Task ReplaceAsync_ProductDoesNotExist_ReturnsFalse()
     {
+        var name = "Kaffee";
         var productRepository = CreateProductRepository();
 
-        var wasReplaced = await productRepository.ReplaceAsync(new Product(CoffeeId, "Kaffee", null, 4.99m));
+        var actualWasReplaced = await productRepository.ReplaceAsync(new Product(CoffeeId, name, null, 4.99m));
 
-        Assert.False(wasReplaced);
+        Assert.False(actualWasReplaced);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ProductExists_RemovesProduct()
+    {
+        var name = "Kaffee";
+        var productRepository = CreateProductRepository();
+        await productRepository.AddAsync(new Product(CoffeeId, name, null, 4.99m));
+
+        var actualWasDeleted = await productRepository.DeleteAsync(CoffeeId);
+
+        Assert.True(actualWasDeleted);
         Assert.Null(await productRepository.GetAsync(CoffeeId));
     }
 
     [Fact]
-    public async Task DeleteAsync_RemovesTheStoredProduct()
-    {
-        var productRepository = CreateProductRepository();
-        await productRepository.AddAsync(new Product(CoffeeId, "Kaffee", null, 4.99m));
-
-        var wasDeleted = await productRepository.DeleteAsync(CoffeeId);
-
-        Assert.True(wasDeleted);
-        Assert.Null(await productRepository.GetAsync(CoffeeId));
-    }
-
-    [Fact]
-    public async Task DeleteAsync_ReturnsFalseWhenProductDoesNotExist()
+    public async Task DeleteAsync_ProductDoesNotExist_ReturnsFalse()
     {
         var productRepository = CreateProductRepository();
 
-        var wasDeleted = await productRepository.DeleteAsync(CoffeeId);
+        var actualWasDeleted = await productRepository.DeleteAsync(CoffeeId);
 
-        Assert.False(wasDeleted);
+        Assert.False(actualWasDeleted);
     }
 
     [Fact]
-    public async Task Products_AreStillAvailableForANewRepositoryOnTheSameDatabase()
+    public async Task GetAsync_NewRepositoryOnSameDatabase_ReturnsStoredProduct()
     {
         const string databaseName = "catalog-products-survive-restart";
+        var expectedName = "Kaffee";
         var firstProductRepository = CreateProductRepository(databaseName);
-        await firstProductRepository.AddAsync(new Product(CoffeeId, "Kaffee", "Gemahlen", 4.99m));
-
+        await firstProductRepository.AddAsync(new Product(CoffeeId, expectedName, "Gemahlen", 4.99m));
         var restartedProductRepository = CreateProductRepository(databaseName);
-        var stored = await restartedProductRepository.GetAsync(CoffeeId);
 
-        Assert.NotNull(stored);
-        Assert.Equal("Kaffee", stored.Name);
+        var actualProduct = await restartedProductRepository.GetAsync(CoffeeId);
+
+        Assert.NotNull(actualProduct);
+        Assert.Equal(expectedName, actualProduct.Name);
     }
 
     private MongoProductRepository CreateProductRepository([CallerMemberName] string databaseName = "")

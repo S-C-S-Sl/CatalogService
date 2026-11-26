@@ -4,7 +4,7 @@ namespace CatalogService.Resources;
 
 public interface IProductRepository
 {
-    Task<IReadOnlyList<Product>> GetAllAsync(CancellationToken cancellationToken = default);
+    IAsyncEnumerable<Product> GetAllAsync(CancellationToken cancellationToken = default);
 
     /// <returns>Das Produkt oder <c>null</c>, wenn es nicht existiert.</returns>
     Task<Product?> GetAsync(Guid id, CancellationToken cancellationToken = default);

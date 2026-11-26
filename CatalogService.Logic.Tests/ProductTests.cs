@@ -1,5 +1,3 @@
-using CatalogService.Logic;
-
 namespace CatalogService.Logic.Tests;
 
 public sealed class ProductTests
@@ -7,41 +5,63 @@ public sealed class ProductTests
     private static readonly Guid ProductId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
     [Fact]
-    public void Constructor_SetsAllValues()
+    public void Constructor_AllValuesAreValid_SetsAllValues()
     {
-        var product = new Product(ProductId, "Kaffee", "Gemahlen", 4.99m);
+        var expectedId = ProductId;
+        var expectedName = "Kaffee";
+        var expectedDescription = "Gemahlen";
+        var expectedPrice = 4.99m;
 
-        Assert.Equal(ProductId, product.Id);
-        Assert.Equal("Kaffee", product.Name);
-        Assert.Equal("Gemahlen", product.Description);
-        Assert.Equal(4.99m, product.Price);
+        var actualProduct = new Product(expectedId, expectedName, expectedDescription, expectedPrice);
+
+        Assert.Equal(expectedId, actualProduct.Id);
+        Assert.Equal(expectedName, actualProduct.Name);
+        Assert.Equal(expectedDescription, actualProduct.Description);
+        Assert.Equal(expectedPrice, actualProduct.Price);
     }
 
     [Fact]
-    public void Constructor_RejectsEmptyId()
+    public void Constructor_IdIsEmpty_ThrowsException()
     {
-        Assert.Throws<ArgumentException>(() => new Product(Guid.Empty, "Kaffee", null, 4.99m));
+        var emptyId = Guid.Empty;
+        var name = "Kaffee";
+
+        var actualException = Record.Exception(() => new Product(emptyId, name, null, 4.99m));
+
+        Assert.IsType<ArgumentException>(actualException);
     }
 
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public void Constructor_RejectsMissingName(string name)
+    public void Constructor_NameIsMissing_ThrowsException(string missingName)
     {
-        Assert.Throws<ArgumentException>(() => new Product(ProductId, name, null, 4.99m));
+        var price = 4.99m;
+
+        var actualException = Record.Exception(() => new Product(ProductId, missingName, null, price));
+
+        Assert.IsType<ArgumentException>(actualException);
     }
 
     [Fact]
-    public void Constructor_RejectsNegativePrice()
+    public void Constructor_PriceIsNegative_ThrowsException()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new Product(ProductId, "Kaffee", null, -0.01m));
+        var name = "Kaffee";
+        var negativePrice = -0.01m;
+
+        var actualException = Record.Exception(() => new Product(ProductId, name, null, negativePrice));
+
+        Assert.IsType<ArgumentOutOfRangeException>(actualException);
     }
 
     [Fact]
-    public void Constructor_AcceptsPriceZero()
+    public void Constructor_PriceIsZero_AcceptsPrice()
     {
-        var product = new Product(ProductId, "Gratisprobe", null, 0m);
+        var name = "Gratisprobe";
+        var expectedPrice = 0m;
 
-        Assert.Equal(0m, product.Price);
+        var actualProduct = new Product(ProductId, name, null, expectedPrice);
+
+        Assert.Equal(expectedPrice, actualProduct.Price);
     }
 }
