@@ -7,6 +7,7 @@ namespace CatalogService.Resources.MongoDb;
 public sealed class ProductDocument
 {
     [BsonId]
+    [BsonGuidRepresentation(GuidRepresentation.Standard)]
     public Guid Id { get; set; }
 
     public string Name { get; set; } = string.Empty;
