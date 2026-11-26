@@ -1,18 +1,12 @@
 # Continuous Integration: baut und testet den CatalogService, veröffentlicht nichts.
-#
-#   Pull Request                                  -> bauen und testen
-#   Push auf Arbeits-Branches (feature/**, bugfix/**) -> bauen und testen
-#   Push auf master/develop (Merge eines Pull Requests) -> übernimmt publish.yml, das diesen Ablauf als
-#                                                    ersten Schritt aufruft und nur bei Erfolg veröffentlicht
+# Läuft immer: bei jedem Push auf jeden Branch und bei jedem Pull Request.
 #
 # Die Container-Tests starten ihre MongoDB selbst; Docker ist auf ubuntu-latest vorhanden.
 name: ci
 
 on:
   push:
-    branches-ignore: [master, develop]
   pull_request:
-  workflow_call:
   workflow_dispatch:
 
 env:

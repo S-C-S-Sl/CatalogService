@@ -1,13 +1,11 @@
 # Veröffentlicht das Container-Image des CatalogService nach ghcr.io.
 #
-#   Zuerst läuft der CI-Ablauf (ci.yml: bauen und testen). Nur wenn er grün ist, wird das Image gebaut
-#   und veröffentlicht.
+#   Läuft nur, wenn ein Pull Request nach master oder develop gemergt wird (ein Merge ist ein Push auf
+#   diesen Branch), nicht bei jedem Feature-Branch. Der Workflow ist unabhängig von anderen Workflows.
 #
 #   Version: GitVersion aus der Git-Historie (GitVersion.yml, GitFlow).
 #            In der DLL setzt sie das NuGet-Paket GitVersion.MsBuild beim Build (auch im Dockerfile),
 #            für die Image-Tags berechnet sie der Job "version" mit derselben Konfiguration.
-#   Läuft nur, wenn ein Pull Request nach master oder develop gemergt wird (ein Merge ist ein Push auf
-#   diesen Branch), nicht bei jedem Feature-Branch. Feature-Branches durchlaufen nur ci.yml.
 #   Push auf master/develop             -> Image mit Versions-, Branch- und Commit-Tag nach ghcr.io
 #                                          (alle Tags aus GitVersion)
 #   Tag v1.2.3 auf master               -> Image 1.2.3
@@ -28,10 +26,6 @@ permissions:
   contents: read
 
 jobs:
-  ci:
-    name: CI
-    uses: ./.github/workflows/ci.yml
-
   version:
     name: Version bestimmen
     runs-on: ubuntu-latest
@@ -61,7 +55,7 @@ jobs:
 
   image:
     name: Container-Image
-    needs: [ci, version]
+    needs: version
     runs-on: ubuntu-latest
     permissions:
       contents: read
