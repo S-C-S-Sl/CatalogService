@@ -1,0 +1,110 @@
+# Veröffentlicht das Container-Image des CatalogService nach ghcr.io.
+#
+#   Läuft nur, wenn ein Pull Request nach master oder develop gemergt wird (ein Merge ist ein Push auf
+#   diesen Branch), nicht bei jedem Feature-Branch. Der Workflow ist unabhängig von anderen Workflows.
+#
+#   Version: GitVersion aus der Git-Historie (GitVersion.yml, GitFlow).
+#            In der DLL setzt sie das NuGet-Paket GitVersion.MsBuild beim Build (auch im Dockerfile),
+#            für die Image-Tags berechnet sie der Job "version" mit derselben Konfiguration.
+#   Push auf master/develop             -> Image mit Versions-, Branch- und Commit-Tag nach ghcr.io
+#                                          (alle Tags aus GitVersion)
+#   Tag v1.2.3 auf master               -> Image 1.2.3
+name: publish
+
+on:
+  push:
+    branches: [master, develop]
+    tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  # Image-Namen müssen klein geschrieben sein
+  IMAGE: ghcr.io/s-c-s-sl/catalogservice
+  DOTNET_VERSION: "10.0.x"
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Version bestimmen
+    runs-on: ubuntu-latest
+    outputs:
+      semVer: ${{ steps.gitversion.outputs.semVer }}
+      escapedBranchName: ${{ steps.gitversion.outputs.escapedBranchName }}
+      shortSha: ${{ steps.gitversion.outputs.shortSha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # GitVersion braucht die komplette Historie samt Tags
+
+      - uses: actions/setup-dotnet@v6   # GitVersion 7 läuft auf .NET 10
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      # Gleiche Hauptversion wie das NuGet-Paket GitVersion.MsBuild im Projekt
+      - uses: gittools/actions/gitversion/setup@v5
+        with:
+          versionSpec: "7.0.x"
+
+      - id: gitversion
+        uses: gittools/actions/gitversion/execute@v5
+
+      - name: Version anzeigen
+        run: echo "### Version ${{ steps.gitversion.outputs.semVer }}" >> "$GITHUB_STEP_SUMMARY"
+
+  image:
+    name: Container-Image
+    needs: version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write   # Push nach ghcr.io mit dem GITHUB_TOKEN
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # .git geht in den Build-Kontext, GitVersion.MsBuild braucht die Historie
+
+      # Tags und Labels allein aus GitVersion: Version (z. B. 0.2.0-create-api.1),
+      # Branch (feature/create-api -> feature-create-api) und Commit (sha-1a2b3c4)
+      - name: Tags bestimmen
+        id: tags
+        env:
+          SEMVER: ${{ needs.version.outputs.semVer }}
+          BRANCH: ${{ needs.version.outputs.escapedBranchName }}
+          SHA: ${{ needs.version.outputs.shortSha }}
+        run: |
+          {
+            echo "tags<<EOF"
+            echo "$IMAGE:$SEMVER"
+            # Bei Git-Tags (v1.2.3) gibt es keinen Branch; dann nur Version und Commit
+            if [ "$GITHUB_REF_TYPE" = "branch" ]; then echo "$IMAGE:$BRANCH"; fi
+            echo "$IMAGE:sha-$SHA"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Anmelden an ghcr.io
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bauen und veröffentlichen
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: CatalogService.Api/Dockerfile
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          # OCI-Labels: "source" verknüpft das Paket auf ghcr.io mit diesem Repo
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.version.outputs.semVer }}
+            org.opencontainers.image.title=catalogservice
+          # Schichten zwischen Läufen wiederverwenden (GitHub-Actions-Cache)
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
