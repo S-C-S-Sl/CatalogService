@@ -118,7 +118,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: CatalogService/Dockerfile
+          file: CatalogService.Api/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.tags.outputs.tags }}
           # OCI-Labels: "source" verknüpft das Paket auf ghcr.io mit diesem Repo

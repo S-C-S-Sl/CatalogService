@@ -5,7 +5,7 @@ using Mappify;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 
-namespace CatalogService.Tests;
+namespace CatalogService.Interactors.Tests;
 
 public sealed class ProductInteractorTests
 {

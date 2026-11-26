@@ -2,7 +2,7 @@
 using CatalogService.Interactors;
 using Microsoft.AspNetCore.Mvc;
 
-namespace CatalogService.Controllers
+namespace CatalogService.Api.Controllers
 {
     [ApiController]
     [ApiVersion(1.0)]

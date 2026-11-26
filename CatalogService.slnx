@@ -3,12 +3,14 @@
     <File Path=".github/workflows/build.yml" />
     <File Path="GitVersion.yml" />
   </Folder>
+  <Project Path="CatalogService.Interactors.Tests/CatalogService.Interactors.Tests.csproj" />
   <Project Path="CatalogService.Interactors/CatalogService.Interactors.csproj" Id="172d5010-67fe-4fda-8e24-17d5b11c8e08" />
+  <Project Path="CatalogService.Logic.Tests/CatalogService.Logic.Tests.csproj" />
   <Project Path="CatalogService.Logic/CatalogService.Logic.csproj" Id="a9b75543-a965-45d8-af93-330d7ca6d470" />
   <Project Path="CatalogService.Resources.MongoDb.Tests/CatalogService.Resources.MongoDb.Tests.csproj" />
   <Project Path="CatalogService.Resources.MongoDb/CatalogService.Resources.MongoDb.csproj" Id="d119fc2b-3cf9-4af6-ba18-25f3e33e5f5f" />
   <Project Path="CatalogService.Resources.RabbitMq/CatalogService.Resources.RabbitMq.csproj" Id="27bcbd1e-269c-4250-b20e-f255527bf9e0" />
   <Project Path="CatalogService.Resources/CatalogService.Resources.csproj" Id="b0dee1a5-7e74-43d9-8e58-d06e620d040b" />
-  <Project Path="CatalogService.Tests/CatalogService.Tests.csproj" />
-  <Project Path="CatalogService/CatalogService.csproj" />
+  <Project Path="CatalogService.Api.Tests/CatalogService.Api.Tests.csproj" />
+  <Project Path="CatalogService.Api/CatalogService.Api.csproj" />
 </Solution>

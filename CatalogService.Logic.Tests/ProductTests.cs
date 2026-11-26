@@ -1,6 +1,6 @@
 using CatalogService.Logic;
 
-namespace CatalogService.Tests;
+namespace CatalogService.Logic.Tests;
 
 public sealed class ProductTests
 {

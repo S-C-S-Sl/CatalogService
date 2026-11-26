@@ -7,7 +7,7 @@ using Mappify;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 
-namespace CatalogService
+namespace CatalogService.Api
 {
     public class Program
     {
